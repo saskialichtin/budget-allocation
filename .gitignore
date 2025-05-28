@@ -8,3 +8,7 @@ data/
 *.csv
 *.rds
 *.sav
+*.RData
+
+# Ignore macOS system file
+.DS_Store
