@@ -240,7 +240,7 @@ for (col in rating_columns) {
 #Duration after data cleaning for sample description
 summary(df_consistent$DurationMinutes)
 
-#### Recode other survey questions #####
+############################### Recode other survey questions #################################### 
 
 #Recode perceived issue importance (Q26)
 df_consistent <- df_consistent %>%
@@ -321,12 +321,18 @@ df_consistent <- df_consistent %>%
 df_consistent <- df_consistent %>%
   mutate(Q23 = na_if(Q23, "Other / Prefer not to say"))
 
+# Change column names
+df_consistent <- df_consistent %>%
+  rename(
+    role = Q21,
+    age_group = Q22,
+    domain = Q23
+  )
+
 ############################### Creating new subset for conjoint analysis ##################################
-# Load dataset again
-df_cleaned <- df_consistent #might change this later
 
 # Intra-Respondent Reliablity
-df_cleaned <- df_cleaned %>%
+df_consistent <- df_consistent %>%
   mutate(IRR_id = case_when(
     (choice_C1 == "Policy mix 1" & choice_C5 == "Policy mix 2") ~ "reliable",
     (choice_C1 == "Policy mix 2" & choice_C5 == "Policy mix 1") ~ "reliable",
@@ -334,12 +340,12 @@ df_cleaned <- df_cleaned %>%
   ))
 
 #### Create subset of data for conjoint analysis
-df_conj <- df_cleaned %>% select("ResponseId", 
+df_conj <- df_consistent %>% select("ResponseId", 
                                         "choice_C1", "choice_C2", "choice_C3", "choice_C4", "choice_C5",
                                         "rating_C1_L", "rating_C2_L", "rating_C3_L", "rating_C4_L", "rating_C5_L",
                                         "rating_C1_R", "rating_C2_R", "rating_C3_R", "rating_C4_R", "rating_C5_R", 
-                                        "frame", "IRR_id", "Q21", "flying_frequency", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", 
-                                        "Q22", "Q23", #age and dept.
+                                        "frame", "IRR_id", "role", "flying_frequency", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", 
+                                        "age_group", "domain", #age and dept.
                                         # Left Columns (C1_L to C5_L)
                                         "Economy_C1_L", "Train_C1_L", "SAF_C1_L", "Infrastructure_C1_L", "Limit_C1_L", "Outcome_C1_L", "Rewards_C1_L", "Sharing_C1_L", "Compensation_C1_L",
                                         "Economy_C2_L", "Train_C2_L", "SAF_C2_L", "Infrastructure_C2_L", "Limit_C2_L", "Outcome_C2_L", "Rewards_C2_L", "Sharing_C2_L", "Compensation_C2_L",
@@ -355,7 +361,7 @@ df_conj <- df_cleaned %>% select("ResponseId",
 
 
 #melt in long format
-df_conj_long <- melt(as.data.table(df_conj), id.vars = c("ResponseId", "frame", "Q21", "flying_frequency", "IRR_id", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", "Q22", "Q23"))
+df_conj_long <- melt(as.data.table(df_conj), id.vars = c("ResponseId", "frame", "role", "flying_frequency", "IRR_id", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", "age_group", "domain"))
 
 #add column proposal and recode proposal left/right
 df_conj_long$proposal <- NA
@@ -385,7 +391,7 @@ df_conj_long$var[grep("choice", df_conj_long$variable)] <- "choice"
 df_conj_long <- df_conj_long %>% select(-variable)
 
 #Reshape long to wide format in new data frame
-df_conj1 <- dcast(df_conj_long, ResponseId + round + proposal + frame + Q21 + flying_frequency + IRR_id + Q3_relevance_numeric + Q26_importance_numeric + Q8_approval_numeric + Q22 + Q23 ~ var)  
+df_conj1 <- dcast(df_conj_long, ResponseId + round + proposal + frame + role + flying_frequency + IRR_id + Q3_relevance_numeric + Q26_importance_numeric + Q8_approval_numeric + age_group + domain ~ var)  
 #ResponseId + round + proposal are row identifiers + all other non-conjoint variables
 #after ~ comes the var (all varying fields) -> new column names
 
@@ -436,14 +442,12 @@ table(df_conj1$Attr_Rewards)
 table(df_conj1$Attr_Sharing)
 table(df_conj1$Attr_Compensation)
 table(df_conj1$frame)
-table(df_conj1$Q21)
+table(df_conj1$role)
 table(df_conj1$flying_frequency)
 table(df_conj1$IRR_id)
 
 #Check if there are rows with missing values, TRUE = missing values present
 summary(is.na(df_conj1))
 
-#### Saving Conjoint File ####
-save(df_conj1, file = "data/Recoded_Conjoint_Data.RData")
-# Save the dataframe as a CSV file
+############################### Saving Conjoint File ################################### 
 write.csv(df_conj1, file = "data/Recoded_Conjoint_Data.csv", row.names = FALSE)
