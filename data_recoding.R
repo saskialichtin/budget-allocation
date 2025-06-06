@@ -8,6 +8,9 @@
 library(tidyverse)
 library(data.table)
 
+#Source functions
+source("functions.R")
+
 #load the pseudonymised dataset (private)
 df <- read.csv("data/241216_Finished_Responses_PSEUDON.csv", sep = ",", dec=",")
 
@@ -138,8 +141,7 @@ df <- df %>%
       . == "Prefer not to say" ~ NA_real_,
       . == "" ~ NA_real_,  # Handle empty strings
       TRUE ~ NA_real_  # Default for unexpected values
-    ),
-    .names = "{.col}"  # Optional: Save recoded values in new columns
+    )
   ))
 
 #Check for NA's (should still be included in ratings)
@@ -184,7 +186,6 @@ df <- df %>%
 # View the first few rows
 head(df$Inconsistencies)
 
-
 # Plot the distribution of inconsistencies with labels above the bars
 ggplot(df, aes(x = Inconsistencies)) +
   geom_bar(fill = "skyblue", color = "black") +
@@ -217,52 +218,15 @@ df_consistent <- df %>%
 # Verify the result
 cat("Number of rows in df_consistent:", nrow(df_consistent), "\n")
 
-#Check again if NA's exist (as they should)
-# Define the rating columns to inspect
-rating_columns <- c(
-  "rating_C1_L", "rating_C2_L", "rating_C3_L", "rating_C4_L", "rating_C5_L",
-  "rating_C1_R", "rating_C2_R", "rating_C3_R", "rating_C4_R", "rating_C5_R"
-)
-
-# Create a summary table for all rating columns
-rating_summary <- lapply(rating_columns, function(col) {
-  table(df_consistent[[col]], useNA = "ifany")  # Count each option, including NA
-})
-
-# Print results for each rating column
-names(rating_summary) <- rating_columns
-for (col in rating_columns) {
-  cat("Counts for", col, ":\n")
-  print(rating_summary[[col]])
-  cat("\n")
-}
-
 #Duration after data cleaning for sample description
 summary(df_consistent$DurationMinutes)
 
 ############################### Recode other survey questions #################################### 
 
-#Recode perceived issue importance (Q26)
-df_consistent <- df_consistent %>%
-  mutate(
-    Q26_importance_numeric = case_when(
-      Q26 == "Very unimportant"                    ~ 1,
-      Q26 == "More unimportant than important"     ~ 2,
-      Q26 == "Neither important nor unimportant"   ~ 3,
-      Q26 == "More important than unimportant"     ~ 4,
-      Q26 == "Very important"                      ~ 5,
-      Q26 == "Don’t know / Prefer not to say"      ~ NA_real_,
-      TRUE                                         ~ NA_real_
-    )
-  )
-
-df_consistent %>%
-  count(Q26_importance_numeric)
-
 #Recode flying frequency (Q1 & Q2)
 df_consistent <- df_consistent %>%
   mutate(
-    flying_frequency = case_when(
+    flying_frequency_numeric = case_when(
       Q1 == "No"                   ~ 0,
       Q2 == "1-2 trips"            ~ 1,
       Q2 == "3-5 trips"            ~ 2,
@@ -274,7 +238,51 @@ df_consistent <- df_consistent %>%
   )
 
 df_consistent %>%
-  count(flying_frequency)
+  count(flying_frequency_numeric)
+
+#Recode role (Q21)
+df_consistent <- df_consistent %>%
+  mutate(Q21 = na_if(Q21, "Other / Prefer not to say"))
+
+#Recode age (Q22)
+df_consistent <- df_consistent %>%
+  mutate(Q22 = na_if(Q22, "Prefer not to say"))
+
+#Recode dept. (Q23)
+df_consistent <- df_consistent %>%
+  mutate(Q23 = na_if(Q23, "Other / Prefer not to say"))
+
+# Change column names
+df_consistent <- df_consistent %>%
+  rename(
+    role = Q21,
+    age_group = Q22,
+    domain = Q23
+  )
+
+# Cluster flying frequency and role
+df_consistent <- df_consistent %>%
+  mutate(
+    flying_frequency_numeric = as.character(flying_frequency_numeric),
+    flying_frequency = case_when(
+      flying_frequency_numeric == "0" ~ "Non-flyers",
+      flying_frequency_numeric == "1" ~ "Infrequent flyers",
+      flying_frequency_numeric %in% c("2", "3", "4") ~ "Frequent flyers",
+      flying_frequency_numeric == "Prefer not to say" ~ NA_character_,
+      TRUE ~ flying_frequency_numeric
+    ),
+    flying_frequency = factor(flying_frequency),  # back to factor
+    role_group = case_when(
+      role == "Doctoral student" ~ "Doctoral students",
+      role %in% c(
+        "Postdoctoral Researcher (Postdoc & Scientific Assistant I + II)",
+        "Senior Assistant (Senior Assistant I + II & Scientific Collaborator I + II)",
+        "Senior Scientist (Senior Scientist I + II / Titulary Professor & Executive Scientific Collaborator I + II)"
+      ) ~ "Other scientific staff",
+      role == "Full / Associate / Assistant Professor" ~ "Professors",
+      TRUE ~ as.character(role)  # fallback to keep original if no match
+    )
+  )
 
 #Recode perceived relevance of air travel for own work/studies (Q3)
 df_consistent <- df_consistent %>%
@@ -309,25 +317,47 @@ df_consistent <- df_consistent %>%
 df_consistent %>%
   count(Q8_approval_numeric)
 
-#Recode role (Q21)
+#Recode perceived issue importance (Q26)
 df_consistent <- df_consistent %>%
-  mutate(Q21 = na_if(Q21, "Other / Prefer not to say"))
-
-#Recode age (Q22)
-df_consistent <- df_consistent %>%
-  mutate(Q22 = na_if(Q22, "Prefer not to say"))
-
-#Recode dept. (Q23)
-df_consistent <- df_consistent %>%
-  mutate(Q23 = na_if(Q23, "Other / Prefer not to say"))
-
-# Change column names
-df_consistent <- df_consistent %>%
-  rename(
-    role = Q21,
-    age_group = Q22,
-    domain = Q23
+  mutate(
+    Q26_importance_numeric = case_when(
+      Q26 == "Very unimportant"                    ~ 1,
+      Q26 == "More unimportant than important"     ~ 2,
+      Q26 == "Neither important nor unimportant"   ~ 3,
+      Q26 == "More important than unimportant"     ~ 4,
+      Q26 == "Very important"                      ~ 5,
+      Q26 == "Don’t know / Prefer not to say"      ~ NA_real_,
+      TRUE                                         ~ NA_real_
+    )
   )
+
+df_consistent %>%
+  count(Q26_importance_numeric)
+
+############################### Filter dataset to new sample ################################### 
+
+#Only exclude BSc/MSc students and NAs
+df_consistent <- df_consistent %>%
+  filter(
+    !role %in% c("Bachelor's or Master's student"),
+    !is.na(role)
+  )
+
+# Verify the result
+cat("Number of rows in df_consistent:", nrow(df_consistent), "\n")
+
+############################### Sample description ################################### 
+df_consistent %>%
+  count(role_group)
+
+df_consistent %>%
+  count(age_group)
+
+df_consistent %>%
+  count(domain)
+
+df_consistent %>%
+  count(flying_frequency)
 
 ############################### Creating new subset for conjoint analysis ##################################
 
@@ -344,7 +374,7 @@ df_conj <- df_consistent %>% select("ResponseId",
                                         "choice_C1", "choice_C2", "choice_C3", "choice_C4", "choice_C5",
                                         "rating_C1_L", "rating_C2_L", "rating_C3_L", "rating_C4_L", "rating_C5_L",
                                         "rating_C1_R", "rating_C2_R", "rating_C3_R", "rating_C4_R", "rating_C5_R", 
-                                        "frame", "IRR_id", "role", "flying_frequency", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", 
+                                        "frame", "IRR_id", "role", "role_group", "flying_frequency", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", 
                                         "age_group", "domain", #age and dept.
                                         # Left Columns (C1_L to C5_L)
                                         "Economy_C1_L", "Train_C1_L", "SAF_C1_L", "Infrastructure_C1_L", "Limit_C1_L", "Outcome_C1_L", "Rewards_C1_L", "Sharing_C1_L", "Compensation_C1_L",
@@ -361,7 +391,7 @@ df_conj <- df_consistent %>% select("ResponseId",
 
 
 #melt in long format
-df_conj_long <- melt(as.data.table(df_conj), id.vars = c("ResponseId", "frame", "role", "flying_frequency", "IRR_id", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", "age_group", "domain"))
+df_conj_long <- melt(as.data.table(df_conj), id.vars = c("ResponseId", "frame", "role", "role_group", "flying_frequency", "IRR_id", "Q3_relevance_numeric", "Q26_importance_numeric", "Q8_approval_numeric", "age_group", "domain"))
 
 #add column proposal and recode proposal left/right
 df_conj_long$proposal <- NA
@@ -391,63 +421,103 @@ df_conj_long$var[grep("choice", df_conj_long$variable)] <- "choice"
 df_conj_long <- df_conj_long %>% select(-variable)
 
 #Reshape long to wide format in new data frame
-df_conj1 <- dcast(df_conj_long, ResponseId + round + proposal + frame + role + flying_frequency + IRR_id + Q3_relevance_numeric + Q26_importance_numeric + Q8_approval_numeric + age_group + domain ~ var)  
+df_cj <- dcast(df_conj_long, ResponseId + round + proposal + frame + role + role_group + flying_frequency + IRR_id + Q3_relevance_numeric + Q26_importance_numeric + Q8_approval_numeric + age_group + domain ~ var)  
 #ResponseId + round + proposal are row identifiers + all other non-conjoint variables
 #after ~ comes the var (all varying fields) -> new column names
 
-head(df_conj1)
+head(df_cj)
 
 #Create unique identifier for each respondent and round by adding the round to the end of the responseId
-df_conj1$idround <- paste0(df_conj1$ResponseId, df_conj1$round)
+df_cj$idround <- paste0(df_cj$ResponseId, df_cj$round)
 
 #new variable id with unique identifier
-id <- df_conj1$idround
+id <- df_cj$idround
 
 #Duplicate choices for left and right
 #New df where choice column is NA
-df_conj2 <- df_conj1[!is.na(df_conj1$choice), ]
+df_cj2 <- df_cj[!is.na(df_cj$choice), ]
 #Subset with only idround and choice columns
-df_conj2 <- df_conj2 %>% select(idround, choice)
+df_cj2 <- df_cj2 %>% select(idround, choice)
 
 #Duplicate Rows for L and R proposals
-df_conj3 <- df_conj2
-df_conj2$idround <- paste0(df_conj2$idround, "R") #Add R to idround of df_conj2
-df_conj3$idround <- paste0(df_conj3$idround, "L") #Add L to idround of df_conj3
+df_cj3 <- df_cj2
+df_cj2$idround <- paste0(df_cj2$idround, "R") #Add R to idround of df_cj2
+df_cj3$idround <- paste0(df_cj3$idround, "L") #Add L to idround of df_cj3
 
 #merge left and right proposal datasets
-df_conj2 <- rbind(df_conj2,df_conj3)
+df_cj2 <- rbind(df_cj2,df_cj3)
 
 #Updates identifier with new R and L in full dataset
-df_conj1$idround <- paste0(df_conj1$idround, df_conj1$proposal)
-df_conj1 = subset(df_conj1, select = -c(choice) ) #Remove choice column as it will be merged back later
+df_cj$idround <- paste0(df_cj$idround, df_cj$proposal)
+df_cj = subset(df_cj, select = -c(choice) ) #Remove choice column as it will be merged back later
 
 #merge choice dataset back to full dataset
-df_conj1 <- merge(df_conj2,df_conj1,by="idround")
+df_cj <- merge(df_cj2,df_cj,by="idround")
 
 #New column to save original choice
-df_conj1$choice_original <- df_conj1$choice
+df_cj$choice_original <- df_cj$choice
 
 #Binary code for choice, 1 if chosen, 0 if not chosen
-df_conj1$choice <- ifelse(df_conj1$proposal == "L" & df_conj1$choice == "Policy mix 1", 1,
-                          ifelse(df_conj1$proposal == "R" & df_conj1$choice == "Policy mix 2", 1, 0))
+df_cj$choice <- ifelse(df_cj$proposal == "L" & df_cj$choice == "Policy mix 1", 1,
+                          ifelse(df_cj$proposal == "R" & df_cj$choice == "Policy mix 2", 1, 0))
 
 #Check how often each level was shown, and which other entries exist in this column to check for errors
-table(df_conj1$Attr_Economy)
-table(df_conj1$Attr_Train)
-table(df_conj1$Attr_SAF)
-table(df_conj1$Attr_Infrastructure)
-table(df_conj1$Attr_Limit)
-table(df_conj1$Attr_Outcome)
-table(df_conj1$Attr_Rewards)
-table(df_conj1$Attr_Sharing)
-table(df_conj1$Attr_Compensation)
-table(df_conj1$frame)
-table(df_conj1$role)
-table(df_conj1$flying_frequency)
-table(df_conj1$IRR_id)
+table(df_cj$Attr_Economy)
+table(df_cj$Attr_Train)
+table(df_cj$Attr_SAF)
+table(df_cj$Attr_Infrastructure)
+table(df_cj$Attr_Limit)
+table(df_cj$Attr_Outcome)
+table(df_cj$Attr_Rewards)
+table(df_cj$Attr_Sharing)
+table(df_cj$Attr_Compensation)
+table(df_cj$frame)
+table(df_cj$IRR_id)
 
 #Check if there are rows with missing values, TRUE = missing values present
-summary(is.na(df_conj1))
+summary(is.na(df_cj))
+
+############################### Prep for analysis ################################### 
+# Convert all columns to factors (if not already)
+df_cj <- df_cj %>%
+  mutate(across(everything(), as.factor))
+
+# Convert choice and rating back to numeric
+df_cj$choice <- as.numeric(as.character(df_cj$choice))
+df_cj$rating <- as.numeric(as.character(df_cj$rating))
+
+# Count NA values in each column for diagnostics; note: 10 rows per participant
+na_counts <- sapply(df_cj, function(x) sum(is.na(x)))
+print(na_counts[na_counts > 0])
+
+# Rename levels to make them unique by prefixing with the attribute name
+df_cj <- df_cj %>%
+  mutate(
+    Attr_Economy = factor(Attr_Economy, 
+                          levels = levels(Attr_Economy),
+                          labels = paste("Economy:", levels(Attr_Economy))),
+    Attr_Train = factor(Attr_Train, 
+                        levels = levels(Attr_Train),
+                        labels = paste("Train:", levels(Attr_Train))),
+    Attr_SAF = factor(Attr_SAF, 
+                      levels = levels(Attr_SAF),
+                      labels = paste("SAF:", levels(Attr_SAF))),
+    Attr_Infrastructure = factor(Attr_Infrastructure, 
+                                 levels = levels(Attr_Infrastructure),
+                                 labels = paste("Infrastructure:", levels(Attr_Infrastructure))),
+    Attr_Limit = factor(Attr_Limit, 
+                        levels = levels(Attr_Limit),
+                        labels = paste("Limit:", levels(Attr_Limit))),
+    Attr_Rewards = factor(Attr_Rewards, 
+                          levels = levels(Attr_Rewards),
+                          labels = paste("Rewards:", levels(Attr_Rewards))),
+    Attr_Sharing = factor(Attr_Sharing, 
+                          levels = levels(Attr_Sharing),
+                          labels = paste("Sharing:", levels(Attr_Sharing))),
+    Attr_Compensation = factor(Attr_Compensation, 
+                               levels = levels(Attr_Compensation),
+                               labels = paste("Compensation:", levels(Attr_Compensation)))
+  )
 
 ############################### Saving Conjoint File ################################### 
-write.csv(df_conj1, file = "data/Recoded_Conjoint_Data.csv", row.names = FALSE)
+write.csv(df_cj, file = "data/Recoded_Conjoint_Data.csv", row.names = FALSE)
