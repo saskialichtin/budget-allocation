@@ -84,6 +84,8 @@ summary(m_outcome_choice_freq)
 
 # Define subgroups
 flying_levels <- c("Non-flyers", "Infrequent flyers", "Frequent flyers")
+# Only Budget-related attributes for paper
+newdata_vars_base <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
 
 #Loop over subgroups and compute MMs for both models
 
@@ -130,6 +132,9 @@ corrected_mm_df_outcome_choice_freq <- corrected_mm_df_outcome_choice_freq %>%
 combined_freq_df <- bind_rows(corrected_mm_df_control_choice_freq,
                               corrected_mm_df_outcome_choice_freq)
 
+#Establish attribute order for plotting
+desired_order <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
+
 # Reorder attributes for plotting
 combined_freq_df <- combined_freq_df %>%
   mutate(term = factor(term, levels = desired_order))
@@ -162,10 +167,6 @@ figure_subgroup_freq <- ggplot(combined_freq_df,
     values = c("Non-flyers" = "#339999", 
                "Infrequent flyers" = "#FFAA00", 
                "Frequent flyers" = "#CC66FF")
-  ) +
-  guides(
-    color = guide_legend(override.aes = list(shape = c(17, 15, 19))),
-    shape = "none"
   ) +
   theme(
     axis.title.x = element_text(vjust = 0, size = 14),
@@ -285,10 +286,6 @@ supp_figure_subgroup_freq_rating <- ggplot(combined_freq_rating_df,
     values = c("Non-flyers" = "#339999", 
                "Infrequent flyers" = "#FFAA00", 
                "Frequent flyers" = "#CC66FF")
-  ) +
-  guides(
-    color = guide_legend(override.aes = list(shape = c(17, 15, 19))),
-    shape = "none"
   ) +
   theme(
     axis.title.x = element_text(vjust = 0, size = 14),
