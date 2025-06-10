@@ -359,6 +359,54 @@ df_consistent %>%
 df_consistent %>%
   count(flying_frequency)
 
+############################### Creating new subset for budget allocation analysis ##################################
+
+#### Create subset of data for conjoint analysis
+df_budget <- df_consistent %>% select("ResponseId",
+                                    "frame", "role", "role_group", "flying_frequency", 
+                                    "Q20_1", "Q20_2", "Q20_3", "Q20_4", "Q20_5", "Q20_6", #budget allocation strategies
+                                    "age_group", "domain" #age and dept.
+                                    )
+
+#Rename headers to include distribution approach
+df_budget <- df_budget %>%
+  rename(
+    Q20_1_Egalitarian    = Q20_1,
+    Q20_2_Utilitarian    = Q20_2,
+    Q20_3_Prioritarian   = Q20_3,
+    Q20_4_Proportional   = Q20_4,
+    Q20_5_Sufficientarian= Q20_5,
+    Q20_6_NeedBased      = Q20_6
+  )
+
+#Create additional columns with numeric ratings
+df_budget <- df_budget %>%
+  mutate(
+    across(
+      .cols = c(
+        Q20_1_Egalitarian,
+        Q20_2_Utilitarian,
+        Q20_3_Prioritarian,
+        Q20_4_Proportional,
+        Q20_5_Sufficientarian,
+        Q20_6_NeedBased
+      ),
+      .fns = ~ case_when(
+        . == "Strongly disagree"            ~ 1,
+        . == "Disagree somewhat"            ~ 2,
+        . == "Neither agree nor disagree"   ~ 3,
+        . == "Agree somewhat"               ~ 4,
+        . == "Strongly agree"               ~ 5,
+        . == "Don't know / Prefer not to say" ~ NA_real_,
+        TRUE                                ~ NA_real_
+      ),
+      .names = "{.col}_numeric"
+    )
+  )
+
+# Save the dataframe as a CSV file
+write.csv(df_budget, file = "data/Recoded_Budget_Data.csv", row.names = FALSE)
+
 ############################### Creating new subset for conjoint analysis ##################################
 
 # Intra-Respondent Reliablity
