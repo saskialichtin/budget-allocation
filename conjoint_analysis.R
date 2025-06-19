@@ -102,10 +102,10 @@ corrected_mm_df_control_choice_base <- correct_bias_mm(mm_df_control_choice_base
 corrected_mm_df_outcome_choice_base <- correct_bias_mm(mm_df_outcome_choice_base)
 
 #Assign frame to dfs
-mm_df_control_rate_base <- assign_frame(mm_df_control_rate_base, "Control")
-mm_df_outcome_rate_base <- assign_frame(mm_df_outcome_rate_base, "Outcome")
-corrected_mm_df_control_choice_base <- assign_frame(corrected_mm_df_control_choice_base, "Control")
-corrected_mm_df_outcome_choice_base <- assign_frame(corrected_mm_df_outcome_choice_base, "Outcome")
+mm_df_control_rate_base <- assign_frame(mm_df_control_rate_base, "No framing (Control)")
+mm_df_outcome_rate_base <- assign_frame(mm_df_outcome_rate_base, "Policy effectiveness framing")
+corrected_mm_df_control_choice_base <- assign_frame(corrected_mm_df_control_choice_base, "No framing (Control)")
+corrected_mm_df_outcome_choice_base <- assign_frame(corrected_mm_df_outcome_choice_base, "Policy effectiveness framing")
 
 #Assign Choice/Rating to dfs
 mm_df_control_rate_base <- assign_evaluation(mm_df_control_rate_base, "Rating")
@@ -113,69 +113,106 @@ mm_df_outcome_rate_base <- assign_evaluation(mm_df_outcome_rate_base, "Rating")
 corrected_mm_df_control_choice_base <- assign_evaluation(corrected_mm_df_control_choice_base, "Choice")
 corrected_mm_df_outcome_choice_base <- assign_evaluation(corrected_mm_df_outcome_choice_base, "Choice")
 
-#Combine all model outputs
-combined_df <- bind_rows(mm_df_control_rate_base,
-                         mm_df_outcome_rate_base,
-                         corrected_mm_df_control_choice_base,
-                         corrected_mm_df_outcome_choice_base)
-
-#Calculate mean rating for dashed line
-mean_rating <- mean(combined_df$estimate[combined_df$evaluation == "Rating"], na.rm = TRUE)
-
-# Create a data frame for the horizontal lines
-hline_df <- data.frame(evaluation = c("Choice", "Rating"), intercept = c(0.5, mean_rating))
-
 #Establish attribute order for plotting
 desired_order <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
-combined_df <- combined_df %>%
+
+#Combine model outputs
+combined_df_choice <- bind_rows(corrected_mm_df_control_choice_base,
+                                corrected_mm_df_outcome_choice_base)
+combined_df_choice <- combined_df_choice %>%
   mutate(term = factor(term, levels = desired_order))
+
+combined_df_rate <- bind_rows(mm_df_control_rate_base,
+                              mm_df_outcome_rate_base)
+combined_df_rate <- combined_df_rate %>%
+  mutate(term = factor(term, levels = desired_order))
+
 
 ############################### Figure 1: Conjoint ################################### 
 
-# Create the plot: 
-# - x-axis: attribute level (value)
-# - y-axis: marginal mean estimate
-# - shape (and grouping) by measure_type
-# - facet by term (each attribute gets its own row)
-
-figure_1_conjoint <- ggplot(combined_df, aes(x = value, y = estimate, 
-                                      color = frame, shape = frame)) +
+#Choice plot
+conjoint_choice <- ggplot(combined_df_choice, aes(x = value, y = estimate, 
+                                             color = frame, shape = frame)) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
                   size = 0.5,
                   position = position_dodge(width = 0.5)) +
-  geom_hline(data = hline_df, 
-             aes(yintercept = intercept), 
+  geom_hline(yintercept = 0.5, 
              linetype = "dashed",
              color = "grey30", 
              show.legend = FALSE) +
   facet_grid(term ~ evaluation, scales = "free") +
   theme_bw() +
   coord_flip() +
-  ylab("Marginal Means") +
+  ylab("Marginal means") +
   xlab("Policy") +
-  scale_shape_manual(name = "Framing Group", 
-                     values = c("Control" = 17,
-                                "Outcome" = 19)) +
-  scale_color_manual(name = "Framing Group", 
-                     values = c("Control" = "#339999", "Outcome" = "#CC66FF")) +
-  scale_alpha_manual(name = "Significance", values = c("yes" = 1, "no" = 0.5)) +
+  scale_shape_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = 17,
+                                "Policy effectiveness framing" = 19)) +
+  scale_color_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
   guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
          shape = "none",
          alpha = "none") +
   theme(
     axis.title.x = element_text(vjust = 0, size = 14),
     axis.title.y = element_text(vjust = 2, size = 14),
+    axis.ticks = element_blank(),      # removes tick marks
     axis.text = element_text(size = 12),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
-    legend.position = "bottom",
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 14),
+    legend.position = "none",
     strip.background = element_blank(),
     strip.placement = "outside",
     strip.text.x = element_text(size = 14),  # set after theme_bw()
     strip.text.y = element_blank()  # remove row facet text
   )
+
+#Rating plot
+conjoint_rating <- ggplot(combined_df_rate, aes(x = value, y = estimate, 
+                                                  color = frame, shape = frame)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = 0.5,
+                  position = position_dodge(width = 0.5)) +
+  geom_hline(yintercept = 3.0, 
+             linetype = "dashed",
+             color = "grey30", 
+             show.legend = FALSE) +
+  facet_grid(term ~ evaluation, scales = "free") +
+  theme_bw() +
+  coord_flip() +
+  ylim(2.5, 3.5) +
+  ylab("Marginal means") +
+  xlab(NULL) +
+  scale_shape_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = 17,
+                                "Policy effectiveness framing" = 19)) +
+  scale_color_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
+  guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
+         shape = "none",
+         alpha = "none") +
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_blank(),
+    axis.ticks = element_blank(),      # removes tick marks
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    strip.text.x = element_text(size = 14),  # set after theme_bw()
+    strip.text.y = element_blank()  # remove row facet text
+  )
+
+
+#Combined plot
+figure_1_conjoint <- conjoint_choice + conjoint_rating +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 14))
 
 print(figure_1_conjoint)
 
@@ -200,10 +237,10 @@ corrected_mm_df_control_choice_all <- correct_bias_mm(mm_df_control_choice_all)
 corrected_mm_df_outcome_choice_all <- correct_bias_mm(mm_df_outcome_choice_all)
 
 #Assign frame to dfs
-mm_df_control_rate_all <- assign_frame(mm_df_control_rate_all, "Control")
-mm_df_outcome_rate_all <- assign_frame(mm_df_outcome_rate_all, "Outcome")
-corrected_mm_df_control_choice_all <- assign_frame(corrected_mm_df_control_choice_all, "Control")
-corrected_mm_df_outcome_choice_all <- assign_frame(corrected_mm_df_outcome_choice_all, "Outcome")
+mm_df_control_rate_all <- assign_frame(mm_df_control_rate_all, "No framing (Control)")
+mm_df_outcome_rate_all <- assign_frame(mm_df_outcome_rate_all, "Policy effectiveness framing")
+corrected_mm_df_control_choice_all <- assign_frame(corrected_mm_df_control_choice_all, "No framing (Control)")
+corrected_mm_df_outcome_choice_all <- assign_frame(corrected_mm_df_outcome_choice_all, "Policy effectiveness framing")
 
 #Assign Choice/Rating to dfs
 mm_df_control_rate_all <- assign_evaluation(mm_df_control_rate_all, "Rating")
@@ -212,70 +249,107 @@ corrected_mm_df_control_choice_all <- assign_evaluation(corrected_mm_df_control_
 corrected_mm_df_outcome_choice_all <- assign_evaluation(corrected_mm_df_outcome_choice_all, "Choice")
 
 #Combine all model outputs
-combined_df_all <- bind_rows(mm_df_control_rate_all,
-                         mm_df_outcome_rate_all,
-                         corrected_mm_df_control_choice_all,
+combined_df_all_choice <- bind_rows(corrected_mm_df_control_choice_all,
                          corrected_mm_df_outcome_choice_all)
 
-#Calculate mean rating for dashed line
-mean_rating_all <- mean(combined_df_all$estimate[combined_df_all$evaluation == "Rating"], na.rm = TRUE)
-
-# Create a data frame for the horizontal lines
-hline_df_all <- data.frame(evaluation = c("Choice", "Rating"), intercept = c(0.5, mean_rating_all))
+combined_df_all_rate <- bind_rows(mm_df_control_rate_all,
+                                    mm_df_outcome_rate_all)
 
 #Establish attribute order for plotting
 desired_order_all <- c("Attr_Economy", "Attr_Train", "Attr_SAF",
-                   "Attr_Limit", "Attr_Rewards", "Attr_Sharing", 
-                   "Attr_Compensation", "Attr_Infrastructure")
-combined_df_all <- combined_df_all %>%
+                       "Attr_Limit", "Attr_Rewards", "Attr_Sharing", 
+                       "Attr_Compensation", "Attr_Infrastructure")
+
+combined_df_all_choice <- combined_df_all_choice %>%
+  mutate(term = factor(term, levels = desired_order_all))
+
+combined_df_all_rate <- combined_df_all_rate %>%
   mutate(term = factor(term, levels = desired_order_all))
 
 ############################### Supplemental Figure: Conjoint ################################### 
-
-# Create the plot: 
-# - x-axis: attribute level (value)
-# - y-axis: marginal mean estimate
-# - shape (and grouping) by measure_type
-# - facet by term (each attribute gets its own row)
-
-supp_figure_conjoint <- ggplot(combined_df_all, aes(x = value, y = estimate, 
-                                             color = frame, shape = frame)) +
+#Choice plot
+supp_conjoint_choice <- ggplot(combined_df_all_choice, aes(x = value, y = estimate, 
+                                                  color = frame, shape = frame)) +
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
                   size = 0.5,
                   position = position_dodge(width = 0.5)) +
-  geom_hline(data = hline_df_all, 
-             aes(yintercept = intercept), 
+  geom_hline(yintercept = 0.5, 
              linetype = "dashed",
              color = "grey30", 
              show.legend = FALSE) +
   facet_grid(term ~ evaluation, scales = "free") +
   theme_bw() +
   coord_flip() +
-  ylab("Marginal Means") +
+  ylab("Marginal means") +
   xlab("Policy") +
-  scale_shape_manual(name = "Framing Group", 
-                     values = c("Control" = 17,
-                                "Outcome" = 19)) +
-  scale_color_manual(name = "Framing Group", 
-                     values = c("Control" = "#339999", "Outcome" = "#CC66FF")) +
-  scale_alpha_manual(name = "Significance", values = c("yes" = 1, "no" = 0.5)) +
+  scale_shape_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = 17,
+                                "Policy effectiveness framing" = 19)) +
+  scale_color_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
   guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
          shape = "none",
          alpha = "none") +
   theme(
     axis.title.x = element_text(vjust = 0, size = 14),
     axis.title.y = element_text(vjust = 2, size = 14),
+    axis.ticks = element_blank(),      # removes tick marks
     axis.text = element_text(size = 12),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
-    legend.position = "bottom",
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 14),
+    legend.position = "none",
     strip.background = element_blank(),
     strip.placement = "outside",
     strip.text.x = element_text(size = 14),  # set after theme_bw()
     strip.text.y = element_blank()  # remove row facet text
   )
+
+#Rating plot
+supp_conjoint_rating <- ggplot(combined_df_all_rate, aes(x = value, y = estimate, 
+                                                color = frame, shape = frame)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = 0.5,
+                  position = position_dodge(width = 0.5)) +
+  geom_hline(yintercept = 3.0, 
+             linetype = "dashed",
+             color = "grey30", 
+             show.legend = FALSE) +
+  facet_grid(term ~ evaluation, scales = "free") +
+  theme_bw() +
+  coord_flip() +
+  ylim(2.3, 3.7) +
+  ylab("Marginal means") +
+  xlab(NULL) +
+  scale_shape_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = 17,
+                                "Policy effectiveness framing" = 19)) +
+  scale_color_manual(name = "Subgroup", 
+                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
+  guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
+         shape = "none",
+         alpha = "none") +
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_blank(),
+    axis.ticks = element_blank(),      # removes tick marks
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    strip.text.x = element_text(size = 14),  # set after theme_bw()
+    strip.text.y = element_blank()  # remove row facet text
+  )
+
+
+#Combined plot
+supp_figure_conjoint <- supp_conjoint_choice + supp_conjoint_rating +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 14))
 
 print(supp_figure_conjoint)
 
