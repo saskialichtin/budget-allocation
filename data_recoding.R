@@ -14,16 +14,33 @@ source("functions.R")
 #load the pseudonymised dataset (private)
 df <- read.csv("data/241216_Finished_Responses_PSEUDON.csv", sep = ",", dec=",")
 
-############################### Data Cleaning ##################################
-
 #Remove the first and second rows temporarily for analysis
 #Row 1: Question
 #Row 2: ImportId
 header_rows <- df[1:2, ]  # Store the first and second rows
 df <- df[-c(1, 2), ]  # Exclude the first and second rows for processing
 
-#To see all columns, their data type, and preview of contents
-glimpse(df)
+############################### Filter dataset to new sample ################################### 
+
+#Overview over roles
+df %>%
+  count(Q21)
+
+#Only exclude BSc/MSc students and NAs
+df <- df %>%
+  filter(
+    !Q21 %in% c("Bachelor's or Master's student"),
+    !Q21 %in% c("Other / Prefer not to say")
+  )
+
+#Overview over roles after filtering
+df %>%
+  count(Q21)
+
+# Verify the number of responses
+cat("Number of rows:", nrow(df), "\n")
+
+############################### Data Cleaning ##################################
 
 # Convert duration column to numeric
 df$DurationSeconds <- as.numeric(df$Duration..in.seconds.)
@@ -41,6 +58,9 @@ threshold <- 4
 # Filter data under threshold
 df <- df %>%
   filter(DurationMinutes >= threshold)
+
+# Verify the number of responses after excluding speeders
+cat("Number of rows:", nrow(df), "\n")
 
 ################################ Conjoint attributes recoding ################################
 #frame = Control
@@ -334,18 +354,6 @@ df_consistent <- df_consistent %>%
 df_consistent %>%
   count(Q26_importance_numeric)
 
-############################### Filter dataset to new sample ################################### 
-
-#Only exclude BSc/MSc students and NAs
-df_consistent <- df_consistent %>%
-  filter(
-    !role %in% c("Bachelor's or Master's student"),
-    !is.na(role)
-  )
-
-# Verify the result
-cat("Number of rows in df_consistent:", nrow(df_consistent), "\n")
-
 ############################### Sample description ################################### 
 df_consistent %>%
   count(role_group)
@@ -355,6 +363,11 @@ df_consistent %>%
 
 df_consistent %>%
   count(domain)
+
+# Convert to numeric to calculate median
+domain_counts <- table(df_consistent$domain)
+median_count <- median(as.numeric(domain_counts))
+cat("Median number of responses per domain:", median_count, "\n")
 
 df_consistent %>%
   count(flying_frequency)
