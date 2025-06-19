@@ -85,7 +85,7 @@ summary(m_outcome_choice_freq)
 # Define subgroups
 flying_levels <- c("Non-flyers", "Infrequent flyers", "Frequent flyers")
 # Only Budget-related attributes for paper
-newdata_vars_base <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
+newdata_vars_base <- c("Attr_Limit")
 
 #Loop over subgroups and compute MMs for both models
 
@@ -121,24 +121,16 @@ corrected_mm_df_outcome_choice_freq <- correct_bias_mm(mm_df_outcome_choice_freq
 
 # Assign additional info
 corrected_mm_df_control_choice_freq <- corrected_mm_df_control_choice_freq %>%
-  assign_frame("Control") %>%
+  assign_frame("No framing (Control)") %>%
   assign_evaluation("Choice")
 
 corrected_mm_df_outcome_choice_freq <- corrected_mm_df_outcome_choice_freq %>%
-  assign_frame("Outcome") %>%
+  assign_frame("Policy effectiveness framing") %>%
   assign_evaluation("Choice")
 
 # Combine both framing conditions
 combined_freq_df <- bind_rows(corrected_mm_df_control_choice_freq,
                               corrected_mm_df_outcome_choice_freq)
-
-#Establish attribute order for plotting
-desired_order <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
-
-# Reorder attributes for plotting
-combined_freq_df <- combined_freq_df %>%
-  mutate(term = factor(term, levels = desired_order))
-
 
 ############################### Figure 2: Subgroup analysis flying frequency on choice data ################################### 
 figure_subgroup_freq <- ggplot(combined_freq_df, 
@@ -154,16 +146,16 @@ figure_subgroup_freq <- ggplot(combined_freq_df,
   facet_grid(term ~ frame, scales = "free", switch = "y") +
   coord_flip() +
   theme_bw() +
-  ylab("Marginal Means") +
+  ylab("Marginal means") +
   xlab("Policy") +
   scale_shape_manual(
-    name = "Flying Frequency", 
+    name = "Subgroup", 
     values = c("Non-flyers" = 17, 
                "Infrequent flyers" = 15, 
                "Frequent flyers" = 19)
   ) +
   scale_color_manual(
-    name = "Flying Frequency", 
+    name = "Subgroup", 
     values = c("Non-flyers" = "#339999", 
                "Infrequent flyers" = "#FFAA00", 
                "Frequent flyers" = "#CC66FF")
@@ -186,7 +178,7 @@ figure_subgroup_freq <- ggplot(combined_freq_df,
 print(figure_subgroup_freq)
 
 ggsave(figure_subgroup_freq, filename = "plots/figure_2_subgroup_freq_choice.png",
-       width = 12, height = 8.5, unit = "in", dpi = 300)
+       width = 12, height = 4, unit = "in", dpi = 300)
 
 ############################### Appendix: Subgroup Analysis on the Rating Data ################################### 
 # Models
@@ -239,26 +231,18 @@ mm_df_outcome_rating_freq <- bind_rows(mm_list_outcome_rating)
 
 # Assign additional info
 mm_df_control_rating_freq <- mm_df_control_rating_freq %>%
-  assign_frame("Control") %>%
+  assign_frame("No framing (Control)") %>%
   assign_evaluation("Rating")
 
 mm_df_outcome_rating_freq <- mm_df_outcome_rating_freq %>%
-  assign_frame("Outcome") %>%
+  assign_frame("Policy effectiveness framing") %>%
   assign_evaluation("Rating")
 
 # Combine both framing conditions
 combined_freq_rating_df <- bind_rows(mm_df_control_rating_freq,
                                      mm_df_outcome_rating_freq)
 
-# Reorder attributes
-combined_freq_rating_df <- combined_freq_rating_df %>%
-  mutate(term = factor(term, levels = desired_order))
-
 ############################### Supplemental Figure: Subgroup analysis flying frequency on rating data ################################### 
-
-#Change dashed line to mean rating
-mean_rating <- mean(combined_freq_rating_df$estimate)
-
 
 supp_figure_subgroup_freq_rating <- ggplot(combined_freq_rating_df, 
                                       aes(x = value, y = estimate, 
@@ -266,23 +250,24 @@ supp_figure_subgroup_freq_rating <- ggplot(combined_freq_rating_df,
   geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
                   size = 0.5,
                   position = position_dodge(width = 0.5)) +
-  geom_hline(aes(yintercept = mean_rating), 
+  geom_hline(aes(yintercept = 3.0), 
              linetype = "dashed",
              color = "grey30", 
              show.legend = FALSE) +
   facet_grid(term ~ frame, scales = "free_y", switch = "y") +
   coord_flip() +
+  ylim(2.2, 3.8) +
   theme_bw() +
-  ylab("Marginal Means") +
+  ylab("Marginal means") +
   xlab("Policy") +
   scale_shape_manual(
-    name = "Flying Frequency", 
+    name = "Subgroup", 
     values = c("Non-flyers" = 17, 
                "Infrequent flyers" = 15, 
                "Frequent flyers" = 19)
   ) +
   scale_color_manual(
-    name = "Flying Frequency", 
+    name = "Subgroup", 
     values = c("Non-flyers" = "#339999", 
                "Infrequent flyers" = "#FFAA00", 
                "Frequent flyers" = "#CC66FF")
@@ -305,5 +290,5 @@ supp_figure_subgroup_freq_rating <- ggplot(combined_freq_rating_df,
 print(supp_figure_subgroup_freq_rating)
 
 ggsave(supp_figure_subgroup_freq_rating, filename = "supplemental_material/supp_figure_subgroup_freq_rating.png",
-       width = 12, height = 8.5, unit = "in", dpi = 300)
+       width = 12, height = 4, unit = "in", dpi = 300)
 
