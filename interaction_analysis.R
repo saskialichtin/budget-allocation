@@ -135,6 +135,7 @@ figure_interaction_rewards <- ggplot(combined_rewards_df,
              show.legend = FALSE) +
   facet_grid(term ~ frame, scales = "free", switch = "y") +
   coord_flip() +
+  ylim(0.32, 0.65) +
   theme_bw() +
   ylab("Marginal Means") +
   xlab("Policy") +
@@ -249,6 +250,7 @@ figure_interaction_sharing <- ggplot(combined_sharing_df,
              show.legend = FALSE) +
   facet_grid(term ~ frame, scales = "free", switch = "y") +
   coord_flip() +
+  ylim(0.32, 0.65) +
   theme_bw() +
   ylab("Marginal Means") +
   xlab("Policy") +
@@ -363,6 +365,7 @@ figure_interaction_compensation <- ggplot(combined_compensation_df,
              show.legend = FALSE) +
   facet_grid(term ~ frame, scales = "free", switch = "y") +
   coord_flip() +
+  ylim(0.32, 0.65) +
   theme_bw() +
   ylab("Marginal Means") +
   xlab("Policy") +
@@ -403,3 +406,4 @@ ggsave(figure_interaction_compensation, filename = "plots/figure_3c_interaction_
 # Plotting
 # Repeat for the other support policies: Compensation, Sharing
 # Repeat for rating data -> supplemental materials
+
