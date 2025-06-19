@@ -7,7 +7,6 @@
 # load necessary packages
 library(tidyverse)
 library(scales)
-library(RColorBrewer)
 
 # load the preprocessed dataset (private)
 df <- read.csv("data/Recoded_Budget_Data.csv", sep = ",", dec=",")
@@ -72,11 +71,11 @@ df_long <- df_long %>%
       response,
       levels = c(
         "Don't know / Prefer not to say",
-        "Strongly disagree",
-        "Disagree somewhat",
-        "Neither agree nor disagree",
+        "Strongly agree",
         "Agree somewhat",
-        "Strongly agree"
+        "Neither agree nor disagree",
+        "Disagree somewhat",
+        "Strongly disagree"
       )
     )
   )
@@ -101,8 +100,8 @@ df_plot <- df_plot %>%
         "Q20_3_Prioritarian",
         "Q20_1_Egalitarian",
         "Q20_4_Proportional",
-        "Q20_5_Sufficientarian",
-        "Q20_6_NeedBased"
+        "Q20_6_NeedBased",
+        "Q20_5_Sufficientarian"
       ),
       labels = c(
         # Q20_2_Utilitarian
@@ -117,11 +116,12 @@ df_plot <- df_plot %>%
         # Q20_4_Proportional
         "Proportional: Everyone reduces their \ncurrent emissions by 50%.",
         
-        # Q20_5_Sufficientarian
-        "Sufficientarian: ETH members who already\nfly very little don’t have to reduce.",
         
         # Q20_6_NeedBased
-        "Need-Based: ETH members who have a \nhigher need for flying get a higher budget."
+        "Need-Based: ETH members who have a \nhigher need for flying get a higher budget.",
+        
+        # Q20_5_Sufficientarian
+        "Sufficientarian: ETH members who already\nfly very little don’t have to reduce."
       )
     )
   )
@@ -136,8 +136,8 @@ budget_plot <- ggplot(df_plot, aes(x = pct, y = Q20_item_label, fill = response)
   #scale_fill_brewer(palette = "BrBG") +
   scale_fill_manual(
     values = c(
-      "Strongly disagree"              = "#825911",
-      "Disagree somewhat"              = "#dfc27d",
+      "Strongly disagree"              = "#f55200",
+      "Disagree somewhat"              = "#ffaf47",
       "Neither agree nor disagree"     = "#f5f5f5",
       "Agree somewhat"                 = "#80cdc1",
       "Strongly agree"                 = "#01665e",
@@ -161,45 +161,6 @@ theme(
 
 print(budget_plot)
 
-
-
 ggsave(budget_plot, filename = "plots/figure_4_budget_allocation.eps", width = 12, height = 4, unit="in", dpi = 300)
 
 ggsave(budget_plot, filename = "plots/figure_4_budget_allocation.png", width = 12, height = 4, unit="in", dpi = 300)
-
-
-# Original colours
-budget_plot <- ggplot(df_plot, aes(x = Q20_item_label, y = n, fill = response)) +
-  geom_col(position = "fill", width = 0.5, color = "black") +
-  geom_text(
-    aes(label = paste0(round(pct), "%")),
-    position = position_fill(vjust = 0.5),
-    size = 4
-  ) +
-  coord_flip() +
-  scale_y_continuous(labels = percent_format()) +
-  scale_fill_manual(
-    values = c(
-      "Strongly disagree"              = "#d73027",
-      "Disagree somewhat"              = "#f46d43",
-      "Neither agree nor disagree"     = "#f7f7f7",
-      "Agree somewhat"                 = "#74add1",
-      "Strongly agree"                 = "#2c7bb6",
-      "Don't know / Prefer not to say" = "grey70"
-    )
-  ) +
-  labs(x = "Allocation strategy",
-       y = "Percentage of responses",
-       fill = "Answer category"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.title.x = element_text(vjust = 0, size = 14),
-    axis.title.y = element_text(vjust = 2, size = 14),
-    axis.text = element_text(size = 12),
-    legend.position = "bottom",
-    legend.title = element_text(size = 11),
-    legend.text = element_text(size = 11)) +
-  guides(fill = guide_legend(nrow = 1, byrow = TRUE, reverse = TRUE))
-
-print(budget_plot)
