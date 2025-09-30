@@ -128,31 +128,14 @@ correct_bias_mm <- function(mm_df) {
 }
 
 ############################### Helper functions for plotting ################################### 
-#Maybe combine into one
 
-#Function to assign frame to df of model estimates
-assign_frame <- function(df, frame_label) {
-  df <- df %>% mutate(frame = frame_label)
-  return(df)
-}
-
-#Function to assign choice/rating to df of model estimates
-assign_evaluation <- function(df, eval_label) {
-  df <- df %>% mutate(evaluation = eval_label)
-  return(df)
-}
-
-# Function: Create a new variable to designate primary vs. ancillary measures
-assign_measure_type <- function(df) {
-  df <- df %>%
+#Function to assign frame and evaluation type (choice/rating) to df of model estimates
+assign_frame_and_evaluation <- function(df, frame_label, eval_label) {
+  df %>%
     mutate(
-      measure_type = case_when(
-        term %in% c("Attr_Economy", "Attr_Train", "Attr_SAF", "Attr_Limit") ~ "Primary Measures",
-        term %in% c("Attr_Rewards", "Attr_Sharing", "Attr_Compensation", "Attr_Infrastructure") ~ "Ancillary Measures",
-        TRUE ~ "Other"
-      )
+      frame = frame_label,
+      evaluation = eval_label
     )
-  return(df)
 }
 
 #############################  Helper function to extract fixed effects and format the results for tables ############################ 
