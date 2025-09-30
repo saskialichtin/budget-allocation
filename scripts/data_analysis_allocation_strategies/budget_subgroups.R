@@ -132,8 +132,24 @@ df_overall <- reshape_q20(df, NULL) %>%
   mutate(flying_frequency = "Overall")
 
 # Combine and factor
+# Step 1: Get counts
+n_counts <- df %>%
+  filter(!is.na(flying_frequency)) %>%
+  count(flying_frequency) %>%
+  add_row(flying_frequency = "Overall", n = nrow(df)) %>%
+  mutate(label = paste0(flying_frequency, " (n = ", n, ")"))
+
+# Create a named vector for mapping levels → labels
+label_map <- setNames(n_counts$label, n_counts$flying_frequency)
+
+# Combine data and apply mapped labels as a factor with correct order
 df_combined <- bind_rows(df_fly, df_overall) %>%
-  mutate(flying_frequency = factor(flying_frequency, levels = flying_levels))
+  mutate(
+    flying_frequency = factor(
+      label_map[flying_frequency],  # apply label
+      levels = label_map[flying_levels]  # ensure original order
+    )
+  )
 
 flying_subgroup_plot_overall <- plot_q20_subgroup(df_combined, "flying_frequency")
 
@@ -146,15 +162,30 @@ flying_subgroup_plot_base <- plot_q20_subgroup(df_fly, "flying_frequency")
 ggsave(flying_subgroup_plot_base, filename = "plots/flying_subgroup_budget_base.png", width = 15, height = 4.5, unit="in", dpi = 300)
 
 ######################## Supplemental: Plot subgroups: Roles #################################
+role_counts <- df %>%
+  count(role_group) %>%
+  mutate(label = paste0(role_group, " (n = ", n, ")"))
 
-df_role <- reshape_q20(df, "role_group") %>% aggregate_pct("role_group")
+df_role <- reshape_q20(df, "role_group") %>%
+  aggregate_pct("role_group") %>%
+  left_join(role_counts, by = "role_group") %>%
+  mutate(role_group = factor(label, levels = role_counts$label))
+
 role_subgroup_plot <- plot_q20_subgroup(df_role, "role_group")
 
 ggsave(role_subgroup_plot, filename = "supplemental_material/supp_role_budget.png", width = 15, height = 8.5, unit="in", dpi = 300)
 
 ######################## Plot subgroups: Framing groups #################################
 
-df_frame <- reshape_q20(df, "frame") %>% aggregate_pct("frame")
+frame_counts <- df %>%
+  count(frame) %>%
+  mutate(label = paste0(frame, " (n = ", n, ")"))
+
+df_frame <- reshape_q20(df, "frame") %>%
+  aggregate_pct("frame") %>%
+  left_join(frame_counts, by = "frame") %>%
+  mutate(frame = factor(label, levels = frame_counts$label))
+
 frame_subgroup_plot <- plot_q20_subgroup(df_frame, "frame")
 
 ggsave(frame_subgroup_plot, filename = "supplemental_material/supp_frame_budget.png", width = 15, height = 4.5, unit="in", dpi = 300)

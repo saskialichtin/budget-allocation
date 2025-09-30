@@ -62,6 +62,12 @@ tau <- calculate_tau(df_cj)
 df_control <- df_cj %>% filter(frame == "Control" | is.na(frame))
 df_outcome <- df_cj %>% filter(frame == "Outcome" | is.na(frame))
 
+df_control %>%
+  count(df_control$choice)
+
+df_outcome %>%
+  count(df_outcome$choice)
+
 ############################### Paper: Subgroup analysis: Flying frequency ################################### 
 # Fit models (choice data, both frames)
 #control, choice
@@ -156,9 +162,9 @@ figure_subgroup_freq <- ggplot(combined_freq_df,
   ) +
   scale_color_manual(
     name = "Subgroup", 
-    values = c("Non-flyers" = "#339999", 
-               "Infrequent flyers" = "#FFAA00", 
-               "Frequent flyers" = "#CC66FF")
+    values = c("Non-flyers" = "#f55200", 
+               "Infrequent flyers" = "#FFAF47", 
+               "Frequent flyers" = "#00665d")
   ) +
   theme(
     axis.title.x = element_text(vjust = 0, size = 14),
@@ -179,6 +185,115 @@ print(figure_subgroup_freq)
 
 ggsave(figure_subgroup_freq, filename = "plots/figure_2_subgroup_freq_choice.png",
        width = 12, height = 4, unit = "in", dpi = 300)
+
+
+
+
+###### Different color version #######
+subgroup_freq_control <- ggplot(corrected_mm_df_control_choice_freq, 
+                                aes(x = value, y = estimate, 
+                                    color = group, shape = group)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = 1,
+                  position = position_dodge(width = 0.5)) +
+  geom_hline(aes(yintercept = 0.5), 
+             linetype = "dashed",
+             color = "grey30", 
+             show.legend = FALSE) +
+  facet_grid(term ~ frame, scales = "free", switch = "y") +
+  coord_flip() +
+  theme_bw() +
+  ylab("Marginal means") +
+  xlab("Policy") +
+  scale_shape_manual(
+    name = "Subgroup (Control)", 
+    values = c("Non-flyers" = 17, 
+               "Infrequent flyers" = 15, 
+               "Frequent flyers" = 19)
+  ) +
+  scale_color_manual(
+    name = "Subgroup (Control)", 
+    values = c("Non-flyers" = "#81CDC1", 
+               "Infrequent flyers" = "#419A8F", 
+               "Frequent flyers" = "#00665d")
+  ) +
+  theme(
+    axis.title.x = element_text(vjust = 0, size = 14),
+    axis.title.y = element_text(vjust = 2, size = 14),
+    axis.ticks = element_blank(),      # removes tick marks
+    axis.text = element_text(size = 12),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
+    legend.position = "bottom",
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 12),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    strip.text.x = element_text(size = 14),
+    strip.text.y = element_blank()
+  )
+
+print(subgroup_freq_control)
+
+
+subgroup_freq_outcome <- ggplot(corrected_mm_df_outcome_choice_freq, 
+                                aes(x = value, y = estimate, 
+                                    color = group, shape = group)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high),
+                  size = 1,
+                  position = position_dodge(width = 0.5)) +
+  geom_hline(aes(yintercept = 0.5), 
+             linetype = "dashed",
+             color = "grey30", 
+             show.legend = FALSE) +
+  facet_grid(term ~ frame, scales = "free", switch = "y") +
+  coord_flip() +
+  theme_bw() +
+  ylab("Marginal means") +
+  xlab("Policy") +
+  scale_shape_manual(
+    name = "Subgroup (Framed)", 
+    values = c("Non-flyers" = 17, 
+               "Infrequent flyers" = 15, 
+               "Frequent flyers" = 19)
+  ) +
+  scale_color_manual(
+    name = "Subgroup (Framed)", 
+    values = c("Non-flyers" = "#FFAF47", 
+               "Infrequent flyers" = "#FA8124", 
+               "Frequent flyers" = "#f55200")
+  ) +
+  theme(
+    axis.title.x = element_text(vjust = 0, size = 14),
+    axis.title.y = element_blank(),
+    axis.ticks = element_blank(),      # removes tick marks
+    axis.text.x = element_text(size = 12),
+    axis.text.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
+    legend.position = "bottom",
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 12),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    strip.text.x = element_text(size = 14),
+    strip.text.y = element_blank()
+  )
+  
+print(subgroup_freq_outcome)
+  
+#Combined plot
+figure_subgroup_freq_new <- subgroup_freq_control + subgroup_freq_outcome +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 12))
+
+
+print(figure_subgroup_freq_new)
+
+ggsave(figure_subgroup_freq_new, filename = "plots/figure_2_subgroup_freq_choice_new.png",
+       width = 14, height = 4.5, unit = "in", dpi = 300)
 
 ############################### Appendix: Subgroup Analysis on the Rating Data ################################### 
 # Models

@@ -364,6 +364,9 @@ df_consistent %>%
 df_consistent %>%
   count(domain)
 
+df_consistent %>%
+  count(frame)
+
 # Convert to numeric to calculate median
 domain_counts <- table(df_consistent$domain)
 median_count <- median(as.numeric(domain_counts))

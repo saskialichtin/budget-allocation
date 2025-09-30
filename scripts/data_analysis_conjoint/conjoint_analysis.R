@@ -9,6 +9,7 @@ library(tidyverse)
 library(lmerTest) #computes p values for linear mixed-effects regressions
 library(emmeans)
 library(performance) #to check model fit
+library(patchwork)
 
 #Source functions
 source("functions.R")
@@ -149,7 +150,8 @@ conjoint_choice <- ggplot(combined_df_choice, aes(x = value, y = estimate,
                      values = c("No framing (Control)" = 17,
                                 "Policy effectiveness framing" = 19)) +
   scale_color_manual(name = "Subgroup", 
-                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
+                     values = c("No framing (Control)" = "#01665e", 
+                                "Policy effectiveness framing" = "#f55200")) +
   guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
          shape = "none",
          alpha = "none") +
@@ -187,7 +189,8 @@ conjoint_rating <- ggplot(combined_df_rate, aes(x = value, y = estimate,
                      values = c("No framing (Control)" = 17,
                                 "Policy effectiveness framing" = 19)) +
   scale_color_manual(name = "Subgroup", 
-                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
+                     values = c("No framing (Control)" = "#01665e", 
+                                "Policy effectiveness framing" = "#f55200")) +
   guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
          shape = "none",
          alpha = "none") +
