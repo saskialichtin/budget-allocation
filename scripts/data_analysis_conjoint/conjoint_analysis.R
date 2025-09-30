@@ -8,11 +8,10 @@
 library(tidyverse)
 library(lmerTest) #computes p values for linear mixed-effects regressions
 library(emmeans)
-library(performance) #to check model fit
 library(patchwork)
 
 #Source functions
-source("functions.R")
+source("scripts/functions.R")
 
 #load the preprocessed dataset (private)
 df_cj <- read.csv("data/Recoded_Conjoint_Data.csv", sep = ",", dec=",")
@@ -48,7 +47,8 @@ IRR <- mean(df_cj$IRR_id == "reliable", na.rm = TRUE)
 
 tau <- calculate_tau(df_cj)
 
-############################### Split Data into Control and Outcome Samples ################################### 
+############################### Split Data into separate framing groups ################################### 
+#Control (no framing), Outcome (policy effectiveness framing, i.e. saw the policy mix's Outcome)
 df_control <- df_cj %>% filter(frame == "Control" | is.na(frame))
 df_outcome <- df_cj %>% filter(frame == "Outcome" | is.na(frame))
 
@@ -81,15 +81,8 @@ m_outcome_rate_base <- lmer(rating ~ Attr_Economy + Attr_Train + Attr_SAF + Attr
 
 summary(m_outcome_rate_base)
 
-############################### Check model fit ############################### 
-check_model(m_control_choice_base)
-check_model(m_control_rate_base)
-check_model(m_outcome_choice_base)
-check_model(m_outcome_rate_base)
-
-############################### Paper: Complete sample: Marginal Means, choice and rating, both frames ################################### 
-## Choose which attributes to include in the plot
-# Only Budget-related attributes for paper
+############################### Figure 1: Conjoint experiment results ################################### 
+## Choose which attributes to include in the plot: Only Budget-related attributes for publishing article
 newdata_vars_base <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
 
 #Apply marginal means functions
@@ -102,17 +95,11 @@ mm_df_outcome_rate_base <- get_marginal_means_df(m_outcome_rate_base, newdata_va
 corrected_mm_df_control_choice_base <- correct_bias_mm(mm_df_control_choice_base)
 corrected_mm_df_outcome_choice_base <- correct_bias_mm(mm_df_outcome_choice_base)
 
-#Assign frame to dfs
-mm_df_control_rate_base <- assign_frame(mm_df_control_rate_base, "No framing (Control)")
-mm_df_outcome_rate_base <- assign_frame(mm_df_outcome_rate_base, "Policy effectiveness framing")
-corrected_mm_df_control_choice_base <- assign_frame(corrected_mm_df_control_choice_base, "No framing (Control)")
-corrected_mm_df_outcome_choice_base <- assign_frame(corrected_mm_df_outcome_choice_base, "Policy effectiveness framing")
-
-#Assign Choice/Rating to dfs
-mm_df_control_rate_base <- assign_evaluation(mm_df_control_rate_base, "Rating")
-mm_df_outcome_rate_base <- assign_evaluation(mm_df_outcome_rate_base, "Rating")
-corrected_mm_df_control_choice_base <- assign_evaluation(corrected_mm_df_control_choice_base, "Choice")
-corrected_mm_df_outcome_choice_base <- assign_evaluation(corrected_mm_df_outcome_choice_base, "Choice")
+#Assign frame and evaluation to dfs
+mm_df_control_rate_base <- assign_frame_and_evaluation(mm_df_control_rate_base, "No framing (Control)", "Rating")
+mm_df_outcome_rate_base <- assign_frame_and_evaluation(mm_df_outcome_rate_base, "Policy effectiveness framing", "Rating")
+corrected_mm_df_control_choice_base <- assign_frame_and_evaluation(corrected_mm_df_control_choice_base, "No framing (Control)", "Choice")
+corrected_mm_df_outcome_choice_base <- assign_frame_and_evaluation(corrected_mm_df_outcome_choice_base, "Policy effectiveness framing", "Choice")
 
 #Establish attribute order for plotting
 desired_order <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
@@ -127,9 +114,6 @@ combined_df_rate <- bind_rows(mm_df_control_rate_base,
                               mm_df_outcome_rate_base)
 combined_df_rate <- combined_df_rate %>%
   mutate(term = factor(term, levels = desired_order))
-
-
-############################### Figure 1: Conjoint ################################### 
 
 #Choice plot
 conjoint_choice <- ggplot(combined_df_choice, aes(x = value, y = estimate, 
@@ -159,7 +143,7 @@ conjoint_choice <- ggplot(combined_df_choice, aes(x = value, y = estimate,
     axis.title.x = element_text(vjust = 0, size = 14),
     axis.title.y = element_text(vjust = 2, size = 14),
     axis.ticks = element_blank(),      # removes tick marks
-    axis.text = element_text(size = 12),
+    axis.text = element_text(size = 14, color = "black"),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
     legend.position = "none",
@@ -198,7 +182,7 @@ conjoint_rating <- ggplot(combined_df_rate, aes(x = value, y = estimate,
     axis.title.x = element_text(size = 14),
     axis.title.y = element_blank(),
     axis.ticks = element_blank(),      # removes tick marks
-    axis.text.x = element_text(size = 12),
+    axis.text.x = element_text(size = 14, color = "black"),
     axis.text.y = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
@@ -222,9 +206,8 @@ print(figure_1_conjoint)
 ggsave(figure_1_conjoint, filename = "plots/figure_1_conjoint.eps", width = 11, height = 8.5, unit="in", dpi = 300)
 ggsave(figure_1_conjoint, filename = "plots/figure_1_conjoint.png", width = 11, height = 8.5, unit="in", dpi = 300)
 
-############################### Appendix: All attributes, complete sample: Marginal Means, choice and rating, both frames ################################### 
-## Choose which attributes to include in the plot
-# Only Budget-related attributes for paper
+############################### Supplementary Figure A1: Conjoint experiment results of all attributes ################################### 
+## Choose which attributes to include in the plot, all:
 newdata_vars_all <- c("Attr_Economy", "Attr_Train", "Attr_SAF",
                       "Attr_Limit", "Attr_Rewards", "Attr_Sharing", 
                       "Attr_Compensation", "Attr_Infrastructure")
@@ -239,17 +222,11 @@ mm_df_outcome_rate_all <- get_marginal_means_df(m_outcome_rate_base, newdata_var
 corrected_mm_df_control_choice_all <- correct_bias_mm(mm_df_control_choice_all)
 corrected_mm_df_outcome_choice_all <- correct_bias_mm(mm_df_outcome_choice_all)
 
-#Assign frame to dfs
-mm_df_control_rate_all <- assign_frame(mm_df_control_rate_all, "No framing (Control)")
-mm_df_outcome_rate_all <- assign_frame(mm_df_outcome_rate_all, "Policy effectiveness framing")
-corrected_mm_df_control_choice_all <- assign_frame(corrected_mm_df_control_choice_all, "No framing (Control)")
-corrected_mm_df_outcome_choice_all <- assign_frame(corrected_mm_df_outcome_choice_all, "Policy effectiveness framing")
-
-#Assign Choice/Rating to dfs
-mm_df_control_rate_all <- assign_evaluation(mm_df_control_rate_all, "Rating")
-mm_df_outcome_rate_all <- assign_evaluation(mm_df_outcome_rate_all, "Rating")
-corrected_mm_df_control_choice_all <- assign_evaluation(corrected_mm_df_control_choice_all, "Choice")
-corrected_mm_df_outcome_choice_all <- assign_evaluation(corrected_mm_df_outcome_choice_all, "Choice")
+#Assign frame and evaluation to dfs
+mm_df_control_rate_all <- assign_frame_and_evaluation(mm_df_control_rate_all, "No framing (Control)", "Rating")
+mm_df_outcome_rate_all <- assign_frame_and_evaluation(mm_df_outcome_rate_all, "Policy effectiveness framing", "Rating")
+corrected_mm_df_control_choice_all <- assign_frame_and_evaluation(corrected_mm_df_control_choice_all, "No framing (Control)", "Choice")
+corrected_mm_df_outcome_choice_all <- assign_frame_and_evaluation(corrected_mm_df_outcome_choice_all, "Policy effectiveness framing", "Choice")
 
 #Combine all model outputs
 combined_df_all_choice <- bind_rows(corrected_mm_df_control_choice_all,
@@ -269,7 +246,6 @@ combined_df_all_choice <- combined_df_all_choice %>%
 combined_df_all_rate <- combined_df_all_rate %>%
   mutate(term = factor(term, levels = desired_order_all))
 
-############################### Supplemental Figure: Conjoint ################################### 
 #Choice plot
 supp_conjoint_choice <- ggplot(combined_df_all_choice, aes(x = value, y = estimate, 
                                                   color = frame, shape = frame)) +
@@ -289,7 +265,8 @@ supp_conjoint_choice <- ggplot(combined_df_all_choice, aes(x = value, y = estima
                      values = c("No framing (Control)" = 17,
                                 "Policy effectiveness framing" = 19)) +
   scale_color_manual(name = "Subgroup", 
-                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
+                     values = c("No framing (Control)" = "#01665e", 
+                                "Policy effectiveness framing" = "#f55200")) +
   guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
          shape = "none",
          alpha = "none") +
@@ -297,7 +274,7 @@ supp_conjoint_choice <- ggplot(combined_df_all_choice, aes(x = value, y = estima
     axis.title.x = element_text(vjust = 0, size = 14),
     axis.title.y = element_text(vjust = 2, size = 14),
     axis.ticks = element_blank(),      # removes tick marks
-    axis.text = element_text(size = 12),
+    axis.text = element_text(size = 12, color = "black"),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
     legend.position = "none",
@@ -320,14 +297,15 @@ supp_conjoint_rating <- ggplot(combined_df_all_rate, aes(x = value, y = estimate
   facet_grid(term ~ evaluation, scales = "free") +
   theme_bw() +
   coord_flip() +
-  ylim(2.3, 3.7) +
+  ylim(2.5, 3.6) +
   ylab("Marginal means") +
   xlab(NULL) +
   scale_shape_manual(name = "Subgroup", 
                      values = c("No framing (Control)" = 17,
                                 "Policy effectiveness framing" = 19)) +
   scale_color_manual(name = "Subgroup", 
-                     values = c("No framing (Control)" = "#339999", "Policy effectiveness framing" = "#CC66FF")) +
+                     values = c("No framing (Control)" = "#01665e", 
+                                "Policy effectiveness framing" = "#f55200")) +
   guides(color = guide_legend(override.aes = list(shape = c(17, 19))),
          shape = "none",
          alpha = "none") +
@@ -335,7 +313,7 @@ supp_conjoint_rating <- ggplot(combined_df_all_rate, aes(x = value, y = estimate
     axis.title.x = element_text(size = 14),
     axis.title.y = element_blank(),
     axis.ticks = element_blank(),      # removes tick marks
-    axis.text.x = element_text(size = 12),
+    axis.text.x = element_text(size = 12, color = "black"),
     axis.text.y = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_line(color = "grey90", linewidth = 0.5),
@@ -356,6 +334,5 @@ supp_figure_conjoint <- supp_conjoint_choice + supp_conjoint_rating +
 
 print(supp_figure_conjoint)
 
-ggsave(supp_figure_conjoint, filename = "supplemental_material/supp_figure_conjoint.eps", width = 11, height = 8.5, unit="in", dpi = 300)
-ggsave(supp_figure_conjoint, filename = "supplemental_material/supp_figure_conjoint.png", width = 11, height = 8.5, unit="in", dpi = 300)
-
+ggsave(supp_figure_conjoint, filename = "plots/supplementary_figures/Figure_A1_conjoint.eps", width = 11, height = 11, unit="in", dpi = 300)
+ggsave(supp_figure_conjoint, filename = "plots/supplementary_figures/Figure_A1_conjoint.png", width = 11, height = 11, unit="in", dpi = 300)
