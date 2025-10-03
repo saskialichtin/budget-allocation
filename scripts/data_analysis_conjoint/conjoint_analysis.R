@@ -82,7 +82,7 @@ m_outcome_rate_base <- lmer(rating ~ Attr_Economy + Attr_Train + Attr_SAF + Attr
 summary(m_outcome_rate_base)
 
 ############################### Figure 1: Conjoint experiment results ################################### 
-## Choose which attributes to include in the plot: Only Budget-related attributes for publishing article
+# Choose which attributes to include in the plot: Only Budget-related attributes for publishing article
 newdata_vars_base <- c("Attr_Limit", "Attr_Rewards", "Attr_Sharing", "Attr_Compensation")
 
 #Apply marginal means functions
