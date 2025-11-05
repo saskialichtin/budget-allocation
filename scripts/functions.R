@@ -143,9 +143,9 @@ get_model_estimates <- function(model, model_name, digits = 2) {
   tidy_model <- broom.mixed::tidy(model, effects = "fixed") %>% 
     mutate(
       stars = case_when(
-        p.value < 0.01 ~ "***",
-        p.value < 0.05 ~ "**",
-        p.value < 0.1  ~ "*",
+        p.value < 0.001 ~ "***",
+        p.value < 0.01 ~ "**",
+        p.value < 0.05  ~ "*",
         TRUE ~ ""
       ),
       estimate_round = round(estimate, digits),
