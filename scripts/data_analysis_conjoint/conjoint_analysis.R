@@ -334,5 +334,5 @@ supp_figure_conjoint <- supp_conjoint_choice + supp_conjoint_rating +
 
 print(supp_figure_conjoint)
 
-ggsave(supp_figure_conjoint, filename = "plots/supplementary_figures/Figure_A1_conjoint.eps", width = 11, height = 11, unit="in", dpi = 300)
-ggsave(supp_figure_conjoint, filename = "plots/supplementary_figures/Figure_A1_conjoint.png", width = 11, height = 11, unit="in", dpi = 300)
+ggsave(supp_figure_conjoint, filename = "plots/supplementary_figures/Figure_S1_conjoint.eps", width = 11, height = 11, unit="in", dpi = 300)
+ggsave(supp_figure_conjoint, filename = "plots/supplementary_figures/Figure_S1_conjoint.png", width = 11, height = 11, unit="in", dpi = 300)
