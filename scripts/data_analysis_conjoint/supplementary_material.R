@@ -114,4 +114,4 @@ level_correlations <- ggplot(joint_freq_data, aes(x = x, y = y, fill = n)) +
 
 print(level_correlations)
 
-ggsave(level_correlations, filename = "plots/supplementary_figures/Figure_S3_attribute_level_correlations.png", width = 18, height = 14, unit="in", dpi = 300)
+ggsave(level_correlations, filename = "plots/supplementary_figures/Figure_S4_attribute_level_correlations.png", width = 18, height = 14, unit="in", dpi = 300)

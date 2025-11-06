@@ -70,7 +70,7 @@ df_frame <- df %>%
     pct_label = paste0(round(pct), "%")
   )
 
-########################## Figure S5: Framing effect in budget allocation analysis, Robustness check ##########################
+########################## Figure S3: Framing effect in budget allocation analysis, Robustness check ##########################
 
 frame_subgroup_plot <- ggplot(df_frame, aes(x = pct, y = Q20_item_label, fill = response)) +
   geom_col(position = "stack", width = 0.7) +
@@ -94,7 +94,7 @@ frame_subgroup_plot <- ggplot(df_frame, aes(x = pct, y = Q20_item_label, fill = 
 
 print(frame_subgroup_plot)
 
-ggsave("plots/supplementary_figures/Figure_S4_framing_effect_budget_allocation.png", frame_subgroup_plot,
+ggsave("plots/supplementary_figures/Figure_S3_framing_effect_budget_allocation.png", frame_subgroup_plot,
        width = 11, height = 4.5, units = "in", dpi = 300)
-ggsave("plots/supplementary_figures/Figure_S4_framing_effect_budget_allocation.eps", frame_subgroup_plot,
+ggsave("plots/supplementary_figures/Figure_S3_framing_effect_budget_allocation.eps", frame_subgroup_plot,
        width = 11, height = 4.5, units = "in", dpi = 300)
